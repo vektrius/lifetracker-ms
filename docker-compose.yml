@@ -1,0 +1,41 @@
+services:
+  auth_service:
+    build: auth_service/
+    ports:
+      - "8080:8000"
+    env_file:
+      - .env
+      - auth_service/.env.db
+    volumes:
+      - ./auth_service:/app
+    depends_on:
+      - db
+  transaction_service:
+    build: transaction_service/
+    ports:
+      - "8081:8000"
+    env_file:
+      - .env
+      - transaction_service/.env.db
+    volumes:
+      - ./transaction_service:/app
+    depends_on:
+      - db
+  db:
+    image: mysql/mysql-server:8.0
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+    env_file:
+      - .env.db
+    ports:
+      - "3308:3306"
+  nginx:
+    image: nginx:1.25.3-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - auth_service
+      - transaction_service
+    ports:
+      - "8000:80"
